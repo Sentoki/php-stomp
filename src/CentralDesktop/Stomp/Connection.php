@@ -171,6 +171,7 @@ class Connection implements LoggerAwareInterface {
      */
     public
     function connect($username = '', $password = '', $version = '1.0,1.1,1.2') {
+        $this->logger->debug('connect');
         $this->_makeConnection();
         if ($username != '') {
             $this->_username = $username;
@@ -335,6 +336,7 @@ class Connection implements LoggerAwareInterface {
      */
     public
     function subscribe($destination, $properties = null, $sync = null) {
+        $this->logger->debug('subscribe begin');
         $headers = [
             'ack' => 'client-individual',
             'id'  => 0,
@@ -356,9 +358,11 @@ class Connection implements LoggerAwareInterface {
         if ($this->_waitForReceipt($frame, $sync) == true) {
             $this->_subscriptions[$destination] = $properties;
 
+            $this->logger->debug('subscribe end true');
             return true;
         }
         else {
+            $this->logger->debug('subscribe end false');
             return false;
         }
     }
@@ -603,6 +607,7 @@ class Connection implements LoggerAwareInterface {
      */
     public
     function readFrame() {
+        $this->logger->debug('readFrame begin');
         /**
          * If the buffer is empty, we might have a frame in the socket. Check
          * the buffer first because if we have a buffered message we don't
@@ -616,9 +621,11 @@ class Connection implements LoggerAwareInterface {
         $end = false;
 
         do {
+            $this->logger->debug('do {');
             $data = '';
             // Only read from the socket if we don't have a complete message in the buffer.
             if (!$this->_bufferContainsMessage()) {
+                $this->logger->debug('!$this->_bufferContainsMessage()');
                 $read = fread($this->_socket, $rb);
 
                 if ($read === false || ($read === "" && feof($this->_socket))) {
@@ -690,6 +697,7 @@ class Connection implements LoggerAwareInterface {
      */
     public
     function _appendToBuffer($packet) {
+        $this->logger->debug('_appendToBuffer begin');
         $this->read_buffer .= $packet;
     }
 
@@ -700,6 +708,7 @@ class Connection implements LoggerAwareInterface {
      */
     public
     function _bufferContainsMessage() {
+        $this->logger->debug('_bufferContainsMessage begin');
 
         // we want to check on 'content-length' header first
         $buffer = ltrim($this->read_buffer, "\n");
@@ -711,10 +720,12 @@ class Connection implements LoggerAwareInterface {
             $buffer = strstr($buffer, "\n\n", false);
             $buffer = substr($buffer, 2);
 
+            $this->logger->debug('_bufferContainsMessage end 1');
             return mb_strlen($buffer, '8bit') >= $content_length;
         }
 
         // else check on eol for message to be present
+        $this->logger->debug('_bufferContainsMessage end 2');
         return (strpos($this->read_buffer, "\x00") !== false);
     }
 
@@ -725,6 +736,7 @@ class Connection implements LoggerAwareInterface {
      */
     public
     function _extractNextMessage() {
+        $this->logger->debug('_extractNextMessage begin');
 
         $message = '';
         if ($this->_bufferContainsMessage()) {
@@ -762,6 +774,7 @@ class Connection implements LoggerAwareInterface {
      */
     public
     function hasFrameToRead() {
+        $this->logger->debug('hasFrameToRead begin');
         $read   = [$this->_socket];
         $write  = null;
         $except = null;
@@ -776,9 +789,11 @@ class Connection implements LoggerAwareInterface {
         }
         else {
             if ($has_frame_to_read > 0) {
+                $this->logger->debug('hasFrameToRead end true');
                 return true;
             }
             else {
+                $this->logger->debug('hasFrameToRead end false');
                 return false;
             }
         }
